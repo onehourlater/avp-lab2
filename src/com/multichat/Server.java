@@ -53,10 +53,10 @@ public class Server {
 class ServerThread extends Thread{
 
     private static ArrayList<Socket> sockets;
-    private static Socket socket=null;
+    private Socket socket=null;
 
     private static ArrayList<ObjectOutputStream> objectOutputStreams;
-    private static ObjectOutputStream objectOutputStream;
+    private ObjectOutputStream objectOutputStream;
 
     private static List<Message> messages;
 
@@ -113,7 +113,7 @@ class ServerThread extends Thread{
         }
     }
 
-    private static void closeConnection(){
+    private void closeConnection(){
         try {
             if (!socket.isClosed()) {
                 socket.close();
