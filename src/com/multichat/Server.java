@@ -11,13 +11,13 @@ public class Server {
 
         ServerSocket ss = new ServerSocket(4445);
 
-        ArrayList<Socket> sockets = new ArrayList<Socket>();
+        List<Socket> sockets = new ArrayList<Socket>();
         Socket socket = null;
 
-        ArrayList<ObjectOutputStream> objectOutputStreams = new ArrayList<ObjectOutputStream>();
+        List<ObjectOutputStream> objectOutputStreams = new ArrayList<ObjectOutputStream>();
         ObjectOutputStream objectOutputStream = null;
 
-        ArrayList<ServerThread> serverThreads = new ArrayList<ServerThread>();
+        List<ServerThread> serverThreads = new ArrayList<ServerThread>();
         ServerThread st = null;
 
         List<Message> messages = new ArrayList<>();
@@ -52,17 +52,17 @@ public class Server {
 
 class ServerThread extends Thread{
 
-    private static ArrayList<Socket> sockets;
+    private static List<Socket> sockets;
     private Socket socket=null;
 
-    private static ArrayList<ObjectOutputStream> objectOutputStreams;
+    private static List<ObjectOutputStream> objectOutputStreams;
     private ObjectOutputStream objectOutputStream;
 
     private static List<Message> messages;
 
-    public ServerThread(Socket socket, ArrayList<Socket> sockets, ObjectOutputStream objectOutputStream, ArrayList<ObjectOutputStream> objectOutputStreams, List<Message> serverMessages){
+    public ServerThread(Socket socket, List<Socket> sockets, ObjectOutputStream objectOutputStream, List<ObjectOutputStream> objectOutputStreams, List<Message> serverMessages){
         this.sockets = sockets;
-        this.socket=socket;
+        this.socket = socket;
 
         this.objectOutputStreams = objectOutputStreams;
         this.objectOutputStream = objectOutputStream;
@@ -83,34 +83,38 @@ class ServerThread extends Thread{
 
             Message message = null;
 
-            while(true) {
+            while (true) {
                 try {
 
                     message = (Message) objectInputStream.readObject();
 
-                    messages.add(message);
-
-                    messages.forEach((msg)-> System.out.println(msg.getClientName() + ": " + msg.getText()));
+                    synchronized(messages) {
+                        messages.add(message);
+                        messages.forEach((msg) -> System.out.println(msg.getClientName() + ": " + msg.getText()));
+                    }
 
                     // send back to all active clients
 
-                    for(int i = 0; i < sockets.size(); i++) {
-                        // System.out.println("objectOutputStreams = " + objectOutputStreams.get(i));
+                    synchronized(objectOutputStreams) {
+                        for (int i = 0; i < sockets.size(); i++) {
+                            // System.out.println("objectOutputStreams = " + objectOutputStreams.get(i));
 
-                        objectOutputStreams.get(i).reset();
-                        objectOutputStreams.get(i).writeObject(messages);
+                            objectOutputStreams.get(i).reset();
+                            objectOutputStreams.get(i).writeObject(messages);
+                        }
                     }
 
-                }catch(Exception e){
+                } catch (Exception e) {
                     System.out.println("Connection Error");
                     closeConnection();
                     break;
                 }
             }
-        }catch(IOException e){
+        } catch (IOException e) {
             System.out.println("IO error in server thread");
             closeConnection();
         }
+
     }
 
     private void closeConnection(){
